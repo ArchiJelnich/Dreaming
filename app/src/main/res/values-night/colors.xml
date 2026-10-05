@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Приглушённый вариант палитры для тёмной темы -->
+    <color name="dream_background">#FF2B2222</color>
+    <color name="dream_surface">#FF362B2B</color>
+    <color name="dream_surface_variant">#FF433434</color>
+    <color name="dream_primary">#FFF0AEB6</color>
+    <color name="dream_on_primary">#FF4A2328</color>
+    <color name="dream_primary_container">#FF5E3E3F</color>
+    <color name="dream_on_primary_container">#FFFDE8E0</color>
+    <color name="dream_secondary">#FFE9B8A6</color>
+    <color name="dream_on_background">#FFFDE8E0</color>
+    <color name="dream_on_surface_variant">#FFD8BEB8</color>
+</resources>

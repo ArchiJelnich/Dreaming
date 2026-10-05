@@ -1,0 +1,21 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Спокойная персиково-розовая тема приложения -->
+    <style name="Theme.Dreaming" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/dream_primary</item>
+        <item name="colorOnPrimary">@color/dream_on_primary</item>
+        <item name="colorPrimaryContainer">@color/dream_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/dream_on_primary_container</item>
+        <item name="colorSecondary">@color/dream_secondary</item>
+        <item name="colorSecondaryContainer">@color/dream_primary_container</item>
+        <item name="colorOnSecondaryContainer">@color/dream_on_primary_container</item>
+        <item name="android:colorBackground">@color/dream_background</item>
+        <item name="colorOnBackground">@color/dream_on_background</item>
+        <item name="colorSurface">@color/dream_surface</item>
+        <item name="colorOnSurface">@color/dream_on_background</item>
+        <item name="colorSurfaceVariant">@color/dream_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/dream_on_surface_variant</item>
+        <item name="colorSurfaceContainer">@color/dream_surface_variant</item>
+        <item name="android:windowBackground">@color/dream_background</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+    </style>
+</resources>

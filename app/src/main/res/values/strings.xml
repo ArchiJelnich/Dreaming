@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Dreaming</string>
+    <string name="my_dreams">Мои мечты</string>
+    <string name="add_dream">Добавить</string>
+    <string name="nav_dreams">Мечты</string>
+    <string name="nav_favorites">Избранное</string>
+    <string name="nav_goals">Цели</string>
+    <string name="nav_profile">Профиль</string>
+    <string name="stub_section">Раздел «%1$s» скоро появится</string>
+    <string name="stub_add">Добавление мечты скоро появится</string>
+</resources>

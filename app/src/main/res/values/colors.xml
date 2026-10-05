@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Спокойная персиково-розовая палитра -->
+    <color name="peach_50">#FFFFF6F2</color>
+    <color name="peach_100">#FFFDE8E0</color>
+    <color name="peach_200">#FFF9D3C6</color>
+    <color name="peach_300">#FFF4B9A6</color>
+    <color name="rose_300">#FFEFA7B0</color>
+    <color name="rose_500">#FFD9828F</color>
+    <color name="rose_700">#FFB25F6D</color>
+    <color name="cocoa_900">#FF4A3433</color>
+    <color name="cocoa_600">#FF8A6A66</color>
+
+    <!-- Цвета темы -->
+    <color name="dream_background">@color/peach_50</color>
+    <color name="dream_surface">#FFFFFFFF</color>
+    <color name="dream_surface_variant">@color/peach_100</color>
+    <color name="dream_primary">@color/rose_500</color>
+    <color name="dream_on_primary">#FFFFFFFF</color>
+    <color name="dream_primary_container">@color/peach_200</color>
+    <color name="dream_on_primary_container">@color/cocoa_900</color>
+    <color name="dream_secondary">@color/peach_300</color>
+    <color name="dream_on_background">@color/cocoa_900</color>
+    <color name="dream_on_surface_variant">@color/cocoa_600</color>
+
+
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
