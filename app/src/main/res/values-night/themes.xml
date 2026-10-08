@@ -18,4 +18,15 @@
         <item name="android:windowBackground">@color/dream_background</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
     </style>
+
+    <!-- Экран обрезки фото из android-image-cropper: ему нужна панель действий с кнопкой «Обрезать» -->
+    <style name="Theme.Dreaming.Crop" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">@color/dream_primary</item>
+        <item name="colorOnPrimary">@color/dream_on_primary</item>
+        <item name="colorSurface">@color/dream_surface_variant</item>
+        <item name="colorOnSurface">@color/dream_on_background</item>
+        <item name="android:colorBackground">@color/dream_background</item>
+        <item name="android:windowBackground">@color/dream_background</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+    </style>
 </resources>

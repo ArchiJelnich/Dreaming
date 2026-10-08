@@ -7,5 +7,16 @@
     <string name="nav_goals">Цели</string>
     <string name="nav_profile">Профиль</string>
     <string name="stub_section">Раздел «%1$s» скоро появится</string>
-    <string name="stub_add">Добавление мечты скоро появится</string>
+    <string name="empty_dreams_title">Здесь появятся ваши мечты</string>
+    <string name="empty_dreams_hint">Нажмите «Добавить», чтобы сохранить первую</string>
+    <string name="new_dream">Новая мечта</string>
+    <string name="back">Назад</string>
+    <string name="pick_photo">Выбрать фото из галереи</string>
+    <string name="change_photo">Нажмите, чтобы выбрать другое фото</string>
+    <string name="dream_title_label">Название мечты</string>
+    <string name="save">Сохранить</string>
+    <string name="crop_title">Обрезка фото</string>
+    <!-- Переопределяет подпись кнопки на экране обрезки android-image-cropper -->
+    <string name="crop_image_menu_crop">Готово</string>
+    <string name="crop_failed">Не удалось обрезать фото</string>
 </resources>
