@@ -3,6 +3,7 @@ package com.archi.dreaming.ui.dreams
 import android.graphics.Bitmap
 import android.net.Uri
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -34,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -60,17 +63,34 @@ import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
 import com.archi.dreaming.R
+import java.io.File
 
+/** Что сделали с фото на экране редактора. */
+sealed interface PhotoChange {
+    data object Unchanged : PhotoChange
+    data object Removed : PhotoChange
+    data class New(val uri: Uri) : PhotoChange
+}
+
+/**
+ * Экран создания и редактирования мечты. Фото необязательно.
+ * Для новой мечты [initialPhoto] = null.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddDreamScreen(
-    onSave: (title: String, photo: Uri, onSaved: () -> Unit) -> Unit,
+fun DreamEditorScreen(
+    @StringRes screenTitle: Int,
+    onSave: (title: String, photo: PhotoChange, onSaved: () -> Unit) -> Unit,
     onBack: () -> Unit,
+    initialTitle: String = "",
+    initialPhoto: String? = null,
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
-    var photoUri by rememberSaveable { mutableStateOf<String?>(null) }
-    var title by rememberSaveable { mutableStateOf("") }
+    var newPhotoUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var title by rememberSaveable { mutableStateOf(initialTitle) }
+    var photoRemoved by rememberSaveable { mutableStateOf(false) }
+    val photoModel: Any? = newPhotoUri ?: initialPhoto?.takeUnless { photoRemoved }?.let(::File)
     var saving by rememberSaveable { mutableStateOf(false) }
     val cropTitle = stringResource(R.string.crop_title)
     val colors = MaterialTheme.colorScheme
@@ -79,7 +99,7 @@ fun AddDreamScreen(
 
     val cropLauncher = rememberLauncherForActivityResult(CropImageContract()) { result ->
         if (result.isSuccessful) {
-            photoUri = result.uriContent?.toString()
+            newPhotoUri = result.uriContent?.toString()
         } else if (result.error != null) {
             Toast.makeText(context, R.string.crop_failed, Toast.LENGTH_SHORT).show()
         }
@@ -114,7 +134,7 @@ fun AddDreamScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.new_dream)) },
+                title = { Text(stringResource(screenTitle)) },
                 navigationIcon = {
                     IconButton(onClick = onBack, enabled = !saving) {
                         Icon(
@@ -138,11 +158,12 @@ fun AddDreamScreen(
                 .padding(horizontal = 24.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            val hasPhoto = photoModel != null
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(4f / 5f)
+                    .aspectRatio(if (hasPhoto) 4f / 5f else 2f)
                     .clip(RoundedCornerShape(24.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable(enabled = !saving) {
@@ -151,31 +172,51 @@ fun AddDreamScreen(
                         )
                     },
             ) {
-                val uri = photoUri
-                if (uri != null) {
+                if (hasPhoto) {
                     AsyncImage(
-                        model = uri,
+                        model = photoModel,
                         contentDescription = title.ifBlank { null },
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
                 Text(
-                    text = stringResource(if (uri == null) R.string.pick_photo else R.string.change_photo),
-                    style = if (uri == null) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium,
+                    text = stringResource(if (!hasPhoto) R.string.pick_photo else R.string.change_photo),
+                    style = if (!hasPhoto) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
-                        .align(if (uri == null) Alignment.Center else Alignment.BottomCenter)
+                        .align(if (!hasPhoto) Alignment.Center else Alignment.BottomCenter)
                         .padding(16.dp)
                         .then(
-                            if (uri == null) Modifier
+                            if (!hasPhoto) Modifier
                             else Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f))
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                         ),
                 )
+            }
+
+            if (hasPhoto) {
+                TextButton(
+                    onClick = {
+                        newPhotoUri = null
+                        photoRemoved = true
+                    },
+                    enabled = !saving,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 0.dp),
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_delete),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.remove_photo))
+                }
             }
 
             OutlinedTextField(
@@ -197,11 +238,15 @@ fun AddDreamScreen(
 
             Button(
                 onClick = {
-                    val uri = photoUri ?: return@Button
                     saving = true
-                    onSave(title, Uri.parse(uri), onBack)
+                    val photo = when {
+                        newPhotoUri != null -> PhotoChange.New(Uri.parse(newPhotoUri))
+                        photoRemoved && initialPhoto != null -> PhotoChange.Removed
+                        else -> PhotoChange.Unchanged
+                    }
+                    onSave(title, photo, onBack)
                 },
-                enabled = photoUri != null && title.isNotBlank() && !saving,
+                enabled = title.isNotBlank() && !saving,
                 shape = RoundedCornerShape(28.dp),
                 modifier = Modifier
                     .fillMaxWidth()

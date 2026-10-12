@@ -3,6 +3,8 @@ package com.archi.dreaming.ui.dreams
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,14 +13,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,16 +34,23 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,7 +60,11 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.archi.dreaming.R
 import com.archi.dreaming.data.DreamEntity
+import com.archi.dreaming.ui.theme.Cocoa900
 import com.archi.dreaming.ui.theme.DreamingTheme
+import com.archi.dreaming.ui.theme.NoPhotoGradients
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
 import java.io.File
 
 private enum class NavTab(@StringRes val title: Int, @DrawableRes val icon: Int) {
@@ -63,8 +81,27 @@ private val Tilts = listOf(-2.5f, 1.5f, 2f, -1.5f, -3f, 2.5f, 1f, -2f, 3f, -1f)
 fun DreamsScreen(
     dreams: List<DreamEntity>,
     onAddClick: () -> Unit,
+    onEditClick: (DreamEntity) -> Unit,
+    onDeleteClick: (DreamEntity) -> Unit,
+    onReorder: (List<DreamEntity>) -> Unit,
 ) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val gridState = rememberLazyStaggeredGridState()
+
+    // Локальная копия списка: во время перетаскивания порядок меняется здесь,
+    // а в базу сохраняется, когда палец отпущен
+    var items by remember { mutableStateOf(dreams) }
+    var dragging by remember { mutableStateOf(false) }
+    var moved by remember { mutableStateOf(false) }
+    LaunchedEffect(dreams) {
+        if (!dragging) items = dreams
+    }
+    val reorderState = rememberReorderableLazyStaggeredGridState(gridState) { from, to ->
+        items = items.toMutableList().apply { add(to.index, removeAt(from.index)) }
+        moved = true
+        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    }
     var selectedTab by rememberSaveable { mutableIntStateOf(NavTab.Dreams.ordinal) }
 
     Scaffold(
@@ -109,10 +146,11 @@ fun DreamsScreen(
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 8.dp),
             )
 
-            if (dreams.isEmpty()) {
+            if (items.isEmpty()) {
                 EmptyDreams(Modifier.weight(1f))
             } else LazyVerticalStaggeredGrid(
                 columns = StaggeredGridCells.Fixed(2),
+                state = gridState,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
@@ -120,7 +158,32 @@ fun DreamsScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalItemSpacing = 14.dp,
             ) {
-                items(dreams, key = { it.id }) { dream -> DreamCard(dream) }
+                items(items, key = { it.id }) { dream ->
+                    ReorderableItem(reorderState, key = dream.id) { isDragging ->
+                        var menuExpanded by remember { mutableStateOf(false) }
+                        DreamCard(
+                            dream = dream,
+                            isDragging = isDragging,
+                            menuExpanded = menuExpanded,
+                            onMenuDismiss = { menuExpanded = false },
+                            onEditClick = { onEditClick(dream) },
+                            onDeleteClick = { onDeleteClick(dream) },
+                            // Долгое нажатие поднимает карточку: её можно перетащить,
+                            // а если отпустить на месте — откроется меню действий
+                            dragModifier = Modifier.longPressDraggableHandle(
+                                onDragStarted = {
+                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    dragging = true
+                                    moved = false
+                                },
+                                onDragStopped = {
+                                    dragging = false
+                                    if (moved) onReorder(items) else menuExpanded = true
+                                },
+                            ),
+                        )
+                    }
+                }
             }
 
             Button(
@@ -166,25 +229,115 @@ private fun EmptyDreams(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun DreamCard(dream: DreamEntity) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier = Modifier.rotate(Tilts[(dream.id % Tilts.size).toInt()]),
-    ) {
-        // Высота карточки следует пропорциям обрезанного фото
-        AsyncImage(
-            model = File(dream.imagePath),
-            contentDescription = dream.title,
-            contentScale = ContentScale.FillWidth,
-            modifier = Modifier.fillMaxWidth(),
+private fun DreamCard(
+    dream: DreamEntity,
+    isDragging: Boolean,
+    menuExpanded: Boolean,
+    onMenuDismiss: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    dragModifier: Modifier,
+) {
+    var confirmDelete by remember { mutableStateOf(false) }
+    val lift by animateFloatAsState(if (isDragging) 1f else 0f, label = "lift")
+    val tilt = Tilts[(dream.id % Tilts.size).toInt()]
+
+    Box {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp + 9.dp * lift),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+            // Поднятая карточка чуть увеличивается и выпрямляется
+            modifier = Modifier.graphicsLayer {
+                rotationZ = tilt * (1f - lift)
+                scaleX = 1f + 0.05f * lift
+                scaleY = 1f + 0.05f * lift
+            },
+        ) {
+            Column(modifier = dragModifier) {
+                if (dream.imagePath != null) {
+                    // Высота карточки следует пропорциям обрезанного фото
+                    AsyncImage(
+                        model = File(dream.imagePath),
+                        contentDescription = dream.title,
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        text = dream.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(12.dp),
+                    )
+                } else {
+                    NoPhotoContent(dream)
+                }
+            }
+        }
+
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = onMenuDismiss,
+            shape = RoundedCornerShape(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.edit_dream)) },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_edit), contentDescription = null) },
+                onClick = {
+                    onMenuDismiss()
+                    onEditClick()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.delete_dream)) },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_delete), contentDescription = null) },
+                onClick = {
+                    onMenuDismiss()
+                    confirmDelete = true
+                },
+            )
+        }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(R.string.delete_dream_question, dream.title)) },
+            text = { Text(stringResource(R.string.delete_dream_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmDelete = false
+                        onDeleteClick()
+                    },
+                ) { Text(stringResource(R.string.delete_dream)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
         )
+    }
+}
+
+/** Мечта без фото: мягкий градиент с крупным названием, высота немного разная для «хаоса». */
+@Composable
+private fun NoPhotoContent(dream: DreamEntity) {
+    val (start, end) = NoPhotoGradients[(dream.id % NoPhotoGradients.size).toInt()]
+    Box(
+        contentAlignment = Alignment.BottomStart,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = (110 + (dream.id % 4).toInt() * 20).dp)
+            .background(Brush.linearGradient(listOf(start, end))),
+    ) {
         Text(
             text = dream.title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(12.dp),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = Cocoa900,
+            modifier = Modifier.padding(16.dp),
         )
     }
 }
@@ -192,5 +345,5 @@ private fun DreamCard(dream: DreamEntity) {
 @Preview(showBackground = true)
 @Composable
 private fun DreamsScreenEmptyPreview() {
-    DreamingTheme { DreamsScreen(dreams = emptyList(), onAddClick = {}) }
+    DreamingTheme { DreamsScreen(dreams = emptyList(), onAddClick = {}, onEditClick = {}, onDeleteClick = {}, onReorder = {}) }
 }
