@@ -15,6 +15,14 @@
     <string name="delete_dream_question">Удалить мечту «%1$s»?</string>
     <string name="delete_dream_message">Мечта будет удалена без возможности восстановления.</string>
     <string name="cancel">Отмена</string>
+    <string name="steps_title">Шаги к мечте</string>
+    <string name="steps_progress">Выполнено %1$d из %2$d</string>
+    <string name="steps_empty">Разбейте мечту на небольшие шаги — так до неё проще дойти</string>
+    <string name="new_step_hint">Новый шаг</string>
+    <string name="add_step">Добавить шаг</string>
+    <string name="save_step">Сохранить шаг</string>
+    <string name="edit_step">Изменить шаг</string>
+    <string name="delete_step">Удалить шаг</string>
     <string name="edit_dream_title">Редактирование мечты</string>
     <string name="back">Назад</string>
     <string name="pick_photo">Добавить фото из галереи\n(необязательно)</string>

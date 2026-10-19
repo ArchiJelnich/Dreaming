@@ -5,8 +5,10 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.archi.dreaming.R
 import com.archi.dreaming.data.DreamEntity
+import com.archi.dreaming.data.StepProgress
 import com.archi.dreaming.ui.theme.Cocoa900
 import com.archi.dreaming.ui.theme.DreamingTheme
 import com.archi.dreaming.ui.theme.NoPhotoGradients
@@ -80,7 +83,9 @@ private val Tilts = listOf(-2.5f, 1.5f, 2f, -1.5f, -3f, 2.5f, 1f, -2f, 3f, -1f)
 @Composable
 fun DreamsScreen(
     dreams: List<DreamEntity>,
+    progress: Map<Long, StepProgress>,
     onAddClick: () -> Unit,
+    onDreamClick: (DreamEntity) -> Unit,
     onEditClick: (DreamEntity) -> Unit,
     onDeleteClick: (DreamEntity) -> Unit,
     onReorder: (List<DreamEntity>) -> Unit,
@@ -163,9 +168,11 @@ fun DreamsScreen(
                         var menuExpanded by remember { mutableStateOf(false) }
                         DreamCard(
                             dream = dream,
+                            progress = progress[dream.id],
                             isDragging = isDragging,
                             menuExpanded = menuExpanded,
                             onMenuDismiss = { menuExpanded = false },
+                            onClick = { onDreamClick(dream) },
                             onEditClick = { onEditClick(dream) },
                             onDeleteClick = { onDeleteClick(dream) },
                             // Долгое нажатие поднимает карточку: её можно перетащить,
@@ -231,9 +238,11 @@ private fun EmptyDreams(modifier: Modifier = Modifier) {
 @Composable
 private fun DreamCard(
     dream: DreamEntity,
+    progress: StepProgress?,
     isDragging: Boolean,
     menuExpanded: Boolean,
     onMenuDismiss: () -> Unit,
+    onClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     dragModifier: Modifier,
@@ -254,15 +263,27 @@ private fun DreamCard(
                 scaleY = 1f + 0.05f * lift
             },
         ) {
-            Column(modifier = dragModifier) {
-                if (dream.imagePath != null) {
-                    // Высота карточки следует пропорциям обрезанного фото
-                    AsyncImage(
-                        model = File(dream.imagePath),
-                        contentDescription = dream.title,
-                        contentScale = ContentScale.FillWidth,
-                        modifier = Modifier.fillMaxWidth(),
+            // Короткое нажатие открывает мечту; долгое обрабатывает dragModifier
+            Column(
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = onClick,
+                        onLongClick = {},
+                        hapticFeedbackEnabled = false,
                     )
+                    .then(dragModifier),
+            ) {
+                if (dream.imagePath != null) {
+                    Box {
+                        // Высота карточки следует пропорциям обрезанного фото
+                        AsyncImage(
+                            model = File(dream.imagePath),
+                            contentDescription = dream.title,
+                            contentScale = ContentScale.FillWidth,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        progress?.let { CardProgress(it) }
+                    }
                     Text(
                         text = dream.title,
                         style = MaterialTheme.typography.titleSmall,
@@ -270,7 +291,10 @@ private fun DreamCard(
                         modifier = Modifier.padding(12.dp),
                     )
                 } else {
-                    NoPhotoContent(dream)
+                    Box {
+                        NoPhotoContent(dream)
+                        progress?.let { CardProgress(it) }
+                    }
                 }
             }
         }
@@ -321,6 +345,17 @@ private fun DreamCard(
     }
 }
 
+/** Круг прогресса шагов в правом верхнем углу карточки. */
+@Composable
+private fun BoxScope.CardProgress(progress: StepProgress) {
+    ProgressPie(
+        progress = progress,
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(10.dp),
+    )
+}
+
 /** Мечта без фото: мягкий градиент с крупным названием, высота немного разная для «хаоса». */
 @Composable
 private fun NoPhotoContent(dream: DreamEntity) {
@@ -345,5 +380,5 @@ private fun NoPhotoContent(dream: DreamEntity) {
 @Preview(showBackground = true)
 @Composable
 private fun DreamsScreenEmptyPreview() {
-    DreamingTheme { DreamsScreen(dreams = emptyList(), onAddClick = {}, onEditClick = {}, onDeleteClick = {}, onReorder = {}) }
+    DreamingTheme { DreamsScreen(dreams = emptyList(), progress = emptyMap(), onAddClick = {}, onDreamClick = {}, onEditClick = {}, onDeleteClick = {}, onReorder = {}) }
 }

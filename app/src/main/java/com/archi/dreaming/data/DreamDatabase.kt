@@ -7,10 +7,12 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [DreamEntity::class], version = 3, exportSchema = false)
+@Database(entities = [DreamEntity::class, StepEntity::class], version = 4, exportSchema = false)
 abstract class DreamDatabase : RoomDatabase() {
 
     abstract fun dreamDao(): DreamDao
+
+    abstract fun stepDao(): StepDao
 
     companion object {
         // Добавляет порядок мечт; сохраняем прежний порядок (новые сверху)
@@ -44,6 +46,22 @@ abstract class DreamDatabase : RoomDatabase() {
             }
         }
 
+        // Шаги к мечте
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS steps (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "dreamId INTEGER NOT NULL, " +
+                        "text TEXT NOT NULL, " +
+                        "done INTEGER NOT NULL, " +
+                        "position INTEGER NOT NULL, " +
+                        "FOREIGN KEY(dreamId) REFERENCES dreams(id) ON UPDATE NO ACTION ON DELETE CASCADE)",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_steps_dreamId ON steps (dreamId)")
+            }
+        }
+
         @Volatile
         private var instance: DreamDatabase? = null
 
@@ -54,7 +72,7 @@ abstract class DreamDatabase : RoomDatabase() {
                     DreamDatabase::class.java,
                     "dreams.db",
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                     .also { instance = it }
             }

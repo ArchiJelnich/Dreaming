@@ -6,9 +6,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.archi.dreaming.data.DreamDatabase
 import com.archi.dreaming.data.DreamEntity
+import com.archi.dreaming.data.StepEntity
+import com.archi.dreaming.data.StepProgress
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -18,9 +22,15 @@ import java.util.UUID
 class DreamsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val dao = DreamDatabase.get(application).dreamDao()
+    private val stepDao = DreamDatabase.get(application).stepDao()
 
     val dreams: StateFlow<List<DreamEntity>> = dao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Прогресс шагов по каждой мечте: dreamId → сколько выполнено из скольких. */
+    val progress: StateFlow<Map<Long, StepProgress>> = stepDao.observeProgress()
+        .map { list -> list.associateBy { it.dreamId } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** Копирует обрезанное фото (если есть) во внутреннее хранилище и сохраняет мечту в базу. */
     fun addDream(title: String, croppedPhoto: Uri?, onSaved: () -> Unit) {
@@ -64,6 +74,34 @@ class DreamsViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch(Dispatchers.IO) {
             dao.delete(dream)
             dream.imagePath?.let { File(it).delete() }
+        }
+    }
+
+    fun steps(dreamId: Long): Flow<List<StepEntity>> = stepDao.observeForDream(dreamId)
+
+    /** Добавляет шаг в конец списка. */
+    fun addStep(dreamId: Long, text: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val position = (stepDao.maxPosition(dreamId) ?: -1) + 1
+            stepDao.insert(StepEntity(dreamId = dreamId, text = text.trim(), position = position))
+        }
+    }
+
+    fun renameStep(step: StepEntity, text: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            stepDao.update(step.copy(text = text.trim()))
+        }
+    }
+
+    fun setStepDone(step: StepEntity, done: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            stepDao.update(step.copy(done = done))
+        }
+    }
+
+    fun deleteStep(step: StepEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            stepDao.delete(step)
         }
     }
 
