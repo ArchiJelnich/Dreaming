@@ -12,6 +12,13 @@
     <string name="fulfilled_on">Исполнилась %1$s</string>
     <string name="return_to_dreams">Вернуть в мечты</string>
     <string name="done">Готово</string>
+    <string name="widget_name">Мечта дня</string>
+    <string name="widget_description">Каждый день — фото одной из ваших мечт</string>
+    <string name="widget_empty">Добавьте мечту с фото</string>
+    <string name="step_widget_name">Шаг к мечте</string>
+    <string name="step_widget_description">Каждый день — следующий шаг одной из ваших мечт</string>
+    <string name="step_widget_label">Следующий шаг</string>
+    <string name="step_widget_empty">Добавьте шаги к своим мечтам</string>
     <string name="empty_dreams_title">Здесь появятся ваши мечты</string>
     <string name="empty_dreams_hint">Нажмите «Добавить», чтобы сохранить первую</string>
     <string name="new_dream">Новая мечта</string>

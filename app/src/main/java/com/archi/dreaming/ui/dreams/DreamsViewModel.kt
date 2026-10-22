@@ -2,16 +2,21 @@ package com.archi.dreaming.ui.dreams
 
 import android.app.Application
 import android.net.Uri
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.archi.dreaming.data.DreamDatabase
 import com.archi.dreaming.data.DreamEntity
 import com.archi.dreaming.data.StepEntity
 import com.archi.dreaming.data.StepProgress
+import com.archi.dreaming.widget.DreamStepWidget
+import com.archi.dreaming.widget.DreamWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -26,6 +31,25 @@ class DreamsViewModel(application: Application) : AndroidViewModel(application) 
 
     val dreams: StateFlow<List<DreamEntity>> = dao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    init {
+        viewModelScope.launch {
+            dao.observeAll()
+                .map { list -> list.map { Triple(it.title, it.imagePath, it.fulfilledAt) } }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect {
+                    DreamWidget().updateAll(application)
+                    DreamStepWidget().updateAll(application)
+                }
+        }
+        viewModelScope.launch {
+            stepDao.observeAll()
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { DreamStepWidget().updateAll(application) }
+        }
+    }
 
     val progress: StateFlow<Map<Long, StepProgress>> = stepDao.observeProgress()
         .map { list -> list.associateBy { it.dreamId } }

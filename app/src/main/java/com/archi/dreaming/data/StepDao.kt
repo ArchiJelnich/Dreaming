@@ -16,6 +16,16 @@ interface StepDao {
     @Query("SELECT dreamId, COUNT(*) AS total, SUM(done) AS done FROM steps GROUP BY dreamId")
     fun observeProgress(): Flow<List<StepProgress>>
 
+    @Query("SELECT * FROM steps")
+    fun observeAll(): Flow<List<StepEntity>>
+
+    @Query(
+        "SELECT * FROM steps WHERE done = 0 " +
+            "AND dreamId IN (SELECT id FROM dreams WHERE fulfilledAt IS NULL) " +
+            "ORDER BY dreamId, position, id",
+    )
+    fun observeOpenStepsOfActiveDreams(): Flow<List<StepEntity>>
+
     @Query("SELECT MAX(position) FROM steps WHERE dreamId = :dreamId")
     suspend fun maxPosition(dreamId: Long): Int?
 

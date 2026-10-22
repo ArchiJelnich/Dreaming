@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.image.cropper)
     implementation(libs.reorderable)
+    implementation(libs.androidx.glance.appwidget)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)

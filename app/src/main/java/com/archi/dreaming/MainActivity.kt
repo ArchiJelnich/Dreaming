@@ -1,9 +1,12 @@
 package com.archi.dreaming
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -22,8 +25,11 @@ import com.archi.dreaming.ui.theme.DreamingTheme
 
 class MainActivity : ComponentActivity() {
 
+    private var dreamToOpen by mutableStateOf<Long?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) dreamToOpen = intent.dreamId()
         enableEdgeToEdge()
         setContent {
             DreamingTheme {
@@ -36,6 +42,16 @@ class MainActivity : ComponentActivity() {
                 var tab by rememberSaveable { mutableStateOf(DreamsTab.Dreams) }
                 var openedDreamId by rememberSaveable { mutableStateOf<Long?>(null) }
                 val openedDream = openedDreamId?.let { id -> dreams.find { it.id == id } }
+
+                LaunchedEffect(dreamToOpen) {
+                    dreamToOpen?.let {
+                        addingDream = false
+                        editingDreamId = null
+                        tab = DreamsTab.Dreams
+                        openedDreamId = it
+                        dreamToOpen = null
+                    }
+                }
 
                 when {
                     addingDream -> DreamEditorScreen(
@@ -98,5 +114,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        dreamToOpen = intent.dreamId()
+    }
+
+    private fun Intent.dreamId(): Long? = getLongExtra(EXTRA_DREAM_ID, -1).takeIf { it > 0 }
+
+    companion object {
+        private const val EXTRA_DREAM_ID = "dream_id"
+
+        fun openDreamIntent(context: Context, dreamId: Long?): Intent =
+            Intent(context, MainActivity::class.java).apply {
+                if (dreamId != null) putExtra(EXTRA_DREAM_ID, dreamId)
+            }
     }
 }

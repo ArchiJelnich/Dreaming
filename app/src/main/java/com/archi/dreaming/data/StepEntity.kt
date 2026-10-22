@@ -7,7 +7,6 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "steps",
-    // Шаги удаляются вместе с мечтой
     foreignKeys = [
         ForeignKey(
             entity = DreamEntity::class,

@@ -65,17 +65,13 @@ import com.canhub.cropper.CropImageView
 import com.archi.dreaming.R
 import java.io.File
 
-/** Что сделали с фото на экране редактора. */
 sealed interface PhotoChange {
     data object Unchanged : PhotoChange
     data object Removed : PhotoChange
     data class New(val uri: Uri) : PhotoChange
 }
 
-/**
- * Экран создания и редактирования мечты. Фото необязательно.
- * Для новой мечты [initialPhoto] = null.
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DreamEditorScreen(
@@ -104,7 +100,6 @@ fun DreamEditorScreen(
             Toast.makeText(context, R.string.crop_failed, Toast.LENGTH_SHORT).show()
         }
     }
-    // Системный выбор фото из галереи, затем сразу экран обрезки
     val pickLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri ->

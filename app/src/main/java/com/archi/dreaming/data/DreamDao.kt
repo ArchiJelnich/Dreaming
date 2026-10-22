@@ -26,6 +26,9 @@ interface DreamDao {
     @Delete
     suspend fun delete(dream: DreamEntity)
 
+    @Query("SELECT * FROM dreams WHERE fulfilledAt IS NULL AND imagePath IS NOT NULL ORDER BY id")
+    fun observeActiveWithPhoto(): Flow<List<DreamEntity>>
+
     @Query("SELECT MIN(position) FROM dreams")
     suspend fun minPosition(): Int?
 
