@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 // Спокойная персиково-розовая палитра
 val Peach50 = Color(0xFFFFF6F2)
 val Peach100 = Color(0xFFFDE8E0)
+val PeachSoft = Color(0xFFFEF0EA)
 val Peach200 = Color(0xFFF9D3C6)
 val Peach300 = Color(0xFFF4B9A6)
 val Rose500 = Color(0xFFD9828F)

@@ -29,10 +29,12 @@ interface DreamDao {
     @Query("SELECT MIN(position) FROM dreams")
     suspend fun minPosition(): Int?
 
+    @Query("UPDATE dreams SET fulfilledAt = :fulfilledAt, position = :position WHERE id = :id")
+    suspend fun setFulfilled(id: Long, fulfilledAt: Long?, position: Int)
+
     @Query("UPDATE dreams SET position = :position WHERE id = :id")
     suspend fun setPosition(id: Long, position: Int)
 
-    /** Сохраняет порядок мечт так, как они идут в [ids]. */
     @Transaction
     suspend fun reorder(ids: List<Long>) {
         ids.forEachIndexed { index, id -> setPosition(id, index) }

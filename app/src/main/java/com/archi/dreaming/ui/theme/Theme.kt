@@ -22,6 +22,10 @@ private val LightColors = lightColorScheme(
     surfaceVariant = Peach100,
     onSurfaceVariant = Cocoa600,
     surfaceContainer = Peach100,
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Peach50,
+    surfaceContainerHigh = PeachSoft,
+    surfaceContainerHighest = Peach100,
 )
 
 private val DarkColors = darkColorScheme(
@@ -39,6 +43,10 @@ private val DarkColors = darkColorScheme(
     surfaceVariant = DarkSurfaceVariant,
     onSurfaceVariant = CocoaLight,
     surfaceContainer = DarkSurface,
+    surfaceContainerLowest = DarkBackground,
+    surfaceContainerLow = DarkBackground,
+    surfaceContainerHigh = DarkSurfaceVariant,
+    surfaceContainerHighest = DarkSurfaceVariant,
 )
 
 @Composable

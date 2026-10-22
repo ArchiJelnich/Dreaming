@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [DreamEntity::class, StepEntity::class], version = 4, exportSchema = false)
+@Database(entities = [DreamEntity::class, StepEntity::class], version = 5, exportSchema = false)
 abstract class DreamDatabase : RoomDatabase() {
 
     abstract fun dreamDao(): DreamDao
@@ -15,7 +15,6 @@ abstract class DreamDatabase : RoomDatabase() {
     abstract fun stepDao(): StepDao
 
     companion object {
-        // Добавляет порядок мечт; сохраняем прежний порядок (новые сверху)
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE dreams ADD COLUMN position INTEGER NOT NULL DEFAULT 0")
@@ -26,7 +25,6 @@ abstract class DreamDatabase : RoomDatabase() {
             }
         }
 
-        // Фото стало необязательным: SQLite не умеет снимать NOT NULL, поэтому пересоздаём таблицу
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -46,7 +44,6 @@ abstract class DreamDatabase : RoomDatabase() {
             }
         }
 
-        // Шаги к мечте
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -62,6 +59,12 @@ abstract class DreamDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE dreams ADD COLUMN fulfilledAt INTEGER")
+            }
+        }
+
         @Volatile
         private var instance: DreamDatabase? = null
 
@@ -72,7 +75,7 @@ abstract class DreamDatabase : RoomDatabase() {
                     DreamDatabase::class.java,
                     "dreams.db",
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                     .also { instance = it }
             }

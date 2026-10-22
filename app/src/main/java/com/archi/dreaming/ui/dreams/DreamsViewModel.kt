@@ -27,12 +27,10 @@ class DreamsViewModel(application: Application) : AndroidViewModel(application) 
     val dreams: StateFlow<List<DreamEntity>> = dao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Прогресс шагов по каждой мечте: dreamId → сколько выполнено из скольких. */
     val progress: StateFlow<Map<Long, StepProgress>> = stepDao.observeProgress()
         .map { list -> list.associateBy { it.dreamId } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
-    /** Копирует обрезанное фото (если есть) во внутреннее хранилище и сохраняет мечту в базу. */
     fun addDream(title: String, croppedPhoto: Uri?, onSaved: () -> Unit) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
@@ -45,7 +43,6 @@ class DreamsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    /** Обновляет название и фото; старый файл картинки удаляется, если фото заменили или убрали. */
     fun updateDream(id: Long, title: String, photo: PhotoChange, onSaved: () -> Unit) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
@@ -62,14 +59,23 @@ class DreamsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    /** Сохраняет новый порядок мечт после перетаскивания. */
+    fun fulfill(dream: DreamEntity, dateUtcMillis: Long) = moveToTop(dream, dateUtcMillis)
+
+    fun returnToDreams(dream: DreamEntity) = moveToTop(dream, null)
+
+    private fun moveToTop(dream: DreamEntity, fulfilledAt: Long?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val position = (dao.minPosition() ?: 0) - 1
+            dao.setFulfilled(dream.id, fulfilledAt, position)
+        }
+    }
+
     fun reorder(dreams: List<DreamEntity>) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.reorder(dreams.map { it.id })
         }
     }
 
-    /** Удаляет мечту из базы вместе с файлом её фото. */
     fun deleteDream(dream: DreamEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.delete(dream)
@@ -79,7 +85,6 @@ class DreamsViewModel(application: Application) : AndroidViewModel(application) 
 
     fun steps(dreamId: Long): Flow<List<StepEntity>> = stepDao.observeForDream(dreamId)
 
-    /** Добавляет шаг в конец списка. */
     fun addStep(dreamId: Long, text: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val position = (stepDao.maxPosition(dreamId) ?: -1) + 1
